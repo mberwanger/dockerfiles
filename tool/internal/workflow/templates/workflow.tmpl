@@ -1,0 +1,78 @@
+# GENERATED FILE, DO NOT MODIFY!
+#
+# To update this file please edit the manifest and run:
+#   go run tool/main.go generate workflow -o .github/workflows/dockerfiles.yaml
+#
+name: Build Docker Images
+
+on:
+  pull_request:
+    branches: [ master ]
+  push:
+    branches: [ master ]
+  schedule:
+    # Run daily at 1 PM UTC (9 AM EDT / 8 AM EST)
+    - cron: '0 13 * * *'
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  wait-for-ci:
+    name: Wait for CI to pass
+    runs-on: ubuntu-latest
+    steps:
+      - name: Wait for CI workflow
+        uses: lewagon/wait-on-check-action@v1.4.1
+        with:
+          ref: ${{`{{ github.event.pull_request.head.sha || github.sha }}`}}
+          check-name: 'Verify Generated Files'
+          repo-token: ${{`{{ secrets.GITHUB_TOKEN }}`}}
+          wait-interval: 10
+{{ range .Jobs}}
+  {{.ID}}:
+    name: "{{.Name}}"
+    runs-on: ubuntu-latest
+    {{- if .Needs}}
+    needs: [wait-for-ci, {{range $i, $need := .Needs}}{{if $i}}, {{end}}{{$need}}{{end}}]
+    {{- else}}
+    needs: [wait-for-ci]
+    {{- end}}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Build {{.ImageName}}:{{.Version}}
+        uses: ./.github/actions/dockerfile
+        with:
+          dockerfile_path: {{.DockerfilePath}}
+          image_name: {{.ImageName}}
+          image_tag: {{.Version}}
+          registry: ${{`{{ env.REGISTRY }}`}}
+          registry_username: ${{`{{ github.actor }}`}}
+          registry_password: ${{`{{ secrets.GITHUB_TOKEN }}`}}
+          image_repository: ${{`{{ env.REGISTRY }}`}}/${{`{{ github.repository_owner }}`}}
+          push: ${{`{{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}`}}
+{{ end }}
+  notify:
+    needs: [{{range $i, $job := .Jobs}}{{if $i}}, {{end}}{{$job.ID}}{{end}}]
+    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify on success
+        if: ${{`{{ !contains(needs.*.result, 'failure') }}`}}
+        run: |
+          echo "✅ Docker image build completed successfully"
+          # Add Slack notification here if needed
+
+      - name: Notify on failure
+        if: ${{`{{ contains(needs.*.result, 'failure') }}`}}
+        run: |
+          echo "❌ Docker image build failed"
+          # Add Slack notification here if needed
+          exit 1

@@ -1,0 +1,117 @@
+{{ generation_message }}
+
+{{ from_image (index .Values "base_image") }}
+
+USER root
+
+ARG PYTHON_VERSION={{ index .Values "python_version" }}
+ARG PYTHON_MAJOR_MINOR_VERSION={{ index .Values "python_build_version" }}
+ARG PIP_VERSION={{ index .Values "pip_version" }}
+
+# Install build dependencies for Python compilation
+RUN set -eux; \
+    apt-get update \
+ && apt-get install -y --no-install-recommends \
+        build-essential \
+        libbluetooth-dev \
+        libbz2-dev \
+        libdb-dev \
+        libffi-dev \
+        libgdbm-dev \
+        liblzma-dev \
+        libncurses-dev \
+        libnss3-dev \
+        libreadline-dev \
+        libsqlite3-dev \
+        libssl-dev \
+        libxml2-dev \
+        libxmlsec1-dev \
+        tk-dev \
+        xz-utils \
+        zlib1g-dev \
+ && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+# Download, verify, and compile Python from source
+RUN set -eux; \
+    curl -fL --retry 3 -o python.tgz "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" \
+ && curl -fL --retry 3 -o python.tgz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz.asc" \
+ && export GNUPGHOME="$(mktemp -d)" \
+ && (gpg --batch --keyserver hkps://keys.openpgp.org --keyserver-options timeout=10 --recv-keys "{{ index .Values "python_pgp_key_id" }}" \
+        || gpg --batch --keyserver hkps://keyserver.ubuntu.com --keyserver-options timeout=10 --recv-keys "{{ index .Values "python_pgp_key_id" }}") \
+ && gpg --batch --verify python.tgz.asc python.tgz \
+ && { command -v gpgconf > /dev/null && gpgconf --kill all || :; } \
+ && rm -rf "${GNUPGHOME}" python.tgz.asc \
+ && mkdir -p /usr/src/python \
+ && tar -xzC /usr/src/python --strip-components=1 -f python.tgz \
+ && rm python.tgz \
+ && cd /usr/src/python \
+ && gnuArch="$(dpkg-architecture --query DEB_BUILD_GNU_TYPE)" \
+ && export LDFLAGS="-Wl,-rpath=/usr/local/lib" \
+ && ./configure \
+         --build="$gnuArch" \
+         --enable-optimizations \
+         --enable-loadable-sqlite-extensions \
+         --enable-option-checking=fatal \
+         --enable-shared \
+         --with-lto \
+         --with-system-expat \
+         --without-ensurepip \
+ && make -j "$(nproc)" \
+         EXTRA_CFLAGS="-DTHREAD_STACK_SIZE=0x100000" \
+ && make install \
+ && ldconfig \
+ && cd /usr/local/bin \
+ && ln -sf python${PYTHON_MAJOR_MINOR_VERSION} python3 \
+ && ln -sf python3 python \
+ && cd / \
+ && rm -rf /usr/src/python \
+ && python${PYTHON_MAJOR_MINOR_VERSION} --version \
+ && find /usr/local -depth \
+        \( \
+            \( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
+            -o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
+        \) -exec rm -rf '{}' +
+
+# Install pip manually (since we compiled without ensurepip)
+RUN set -eux; \
+    curl -fL --retry 3 -o get-pip.py https://bootstrap.pypa.io/get-pip.py \
+ && python${PYTHON_MAJOR_MINOR_VERSION} get-pip.py --no-cache-dir "pip==${PIP_VERSION}" \
+ && rm get-pip.py \
+ && cd /usr/local/bin \
+ && ln -sf pip pip${PYTHON_MAJOR_MINOR_VERSION} \
+ && ln -sf pip pip3 \
+ && pip --version \
+ && pip${PYTHON_MAJOR_MINOR_VERSION} --version
+
+# Install uv (fast modern package manager)
+RUN set -eux; \
+    curl -LsSf https://astral.sh/uv/install.sh | sh \
+ && mv /root/.local/bin/uv /usr/local/bin/ \
+ && mv /root/.local/bin/uvx /usr/local/bin/ \
+ && uv --version
+
+# Install poetry
+RUN set -eux; \
+    curl -sSL https://install.python-poetry.org | python${PYTHON_MAJOR_MINOR_VERSION} - \
+ && mv /root/.local/bin/poetry /usr/local/bin/ \
+ && chmod 755 /usr/local/bin/poetry \
+ && poetry --version \
+ && poetry config virtualenvs.in-project true
+
+# Configure package managers for Docker
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PIP_NO_CACHE_DIR=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    POETRY_NO_INTERACTION=1 \
+    POETRY_VIRTUALENVS_IN_PROJECT=true \
+    POETRY_VIRTUALENVS_CREATE=true \
+    POETRY_CACHE_DIR=/tmp/poetry_cache \
+    PATH=/home/docker/.local/bin:/usr/local/bin:/usr/bin:/bin
+
+# Setup working directory and user
+WORKDIR /usr/src/app/
+
+RUN chown docker:docker .
+
+USER docker
