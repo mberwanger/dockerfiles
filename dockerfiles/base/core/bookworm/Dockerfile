@@ -33,9 +33,9 @@ RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-bookworm \
  && chown docker:docker /home/docker
 
 # Install certificates
-COPY certs/*.crt /usr/local/share/ca-certificates/
-RUN update-ca-certificates \
- && c_rehash /etc/ssl/certs
+# COPY certs/*.crt /usr/local/share/ca-certificates/
+# RUN update-ca-certificates \
+#  && c_rehash /etc/ssl/certs
 
 # Install Tini for init use (reaps defunct processes and forwards signals)
 COPY --from=tini /tini /tini
