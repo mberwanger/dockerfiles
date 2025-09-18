@@ -18,7 +18,6 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  DOCKERHUB_ENABLED: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
 
 jobs:
   # Generate CI index to determine build order
@@ -80,13 +79,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Login to DockerHub
-        if: env.DOCKERHUB_ENABLED == 'true'
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-
       - name: Build batch ${{ matrix.batch_data.batch }} in parallel
         env:
           BATCH_NUM: ${{ matrix.batch_data.batch }}
@@ -127,7 +119,6 @@ jobs:
               --cache-to="type=local,dest=$cache_dir" \
               --platform="$platforms" \
               --tag="$image_tag" \
-              $([ "$DOCKERHUB_ENABLED" == "true" ] && echo "--tag=instructure/${base_tag//\//:}") \
               "$dockerfile_path"
 
             # Check for changes using cache layers
@@ -157,7 +148,6 @@ jobs:
                 --platform="$platforms" \
                 --push \
                 --tag="$image_tag" \
-                $([ "$DOCKERHUB_ENABLED" == "true" ] && echo "--tag=instructure/${base_tag//\//:}") \
                 "$dockerfile_path"
 
               echo "CHANGED_IMAGE=$base_tag" >> "$GITHUB_ENV"
@@ -166,7 +156,7 @@ jobs:
 
           # Export function for subshells
           export -f build_image
-          export ROOT_PATH DOCKERHUB_ENABLED FORCE_PUSH IS_MAIN_BRANCH
+          export ROOT_PATH FORCE_PUSH IS_MAIN_BRANCH
 
           echo "📦 Processing batch $BATCH_NUM"
 
