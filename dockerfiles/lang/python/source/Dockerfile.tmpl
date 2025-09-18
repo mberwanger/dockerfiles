@@ -10,7 +10,7 @@ USER root
 ARG PYTHON_VERSION={{ index .Values "python_version" }}
 ARG PYTHON_MAJOR_MINOR_VERSION={{ index .Values "python_build_version" }}
 ARG PIP_VERSION={{ index .Values "pip_version" }}
-ARG PGP_KEY_ID={{ index .Values "python_pgp_key_id" }}
+ARG PYTHON_GPG_KEY={{ index .Values "python_pgp_key_id" }}
 
 # Install Python build dependencies and compile from source
 RUN set -eux; \
@@ -32,8 +32,8 @@ RUN set -eux; \
  && curl -fsSLO https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz \
  && curl -fsSLO https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz.asc \
  && export GNUPGHOME="$(mktemp -d)" \
- && gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys ${PGP_KEY_ID} || \
-    gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys ${PGP_KEY_ID} \
+ && gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys ${PYTHON_GPG_KEY} || \
+    gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys ${PYTHON_GPG_KEY} \
  && gpg --verify Python-${PYTHON_VERSION}.tar.xz.asc Python-${PYTHON_VERSION}.tar.xz \
  && gpgconf --kill all \
  && rm -rf "$GNUPGHOME" \
@@ -58,5 +58,3 @@ USER docker
 
 # Initialize pipenv with specific Python version
 RUN pipenv --python ${PYTHON_MAJOR_MINOR_VERSION}
-
-COPY pip-private pipenv-private /usr/local/bin/
