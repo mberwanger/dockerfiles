@@ -92,8 +92,15 @@ jobs:
             echo "🔨 Building: $dockerfile_path"
 
             # Determine image tags
-            base_tag="${dockerfile_path//appliances\//}"
-            image_tag="${ROOT_PATH}/${base_tag//\//:}"
+            # Remove "dockerfiles/" prefix and convert path to tag format
+            # e.g., dockerfiles/base/tini/v0.19.0 -> tini:v0.19.0
+            base_path="${dockerfile_path#dockerfiles/}"
+            # Extract just the image name and version
+            # Remove category prefix (base/, lang/, runtime/, etc.)
+            image_with_version="${base_path#*/}"
+            image_name="${image_with_version%/*}"
+            version="${image_with_version##*/}"
+            image_tag="${ROOT_PATH}/${image_name}:${version}"
 
             # Check if multi-platform build is needed
             if grep -q "TARGETPLATFORM" "$dockerfile_path/Dockerfile"; then
@@ -150,7 +157,7 @@ jobs:
                 --tag="$image_tag" \
                 "$dockerfile_path"
 
-              echo "CHANGED_IMAGE=$base_tag" >> "$GITHUB_ENV"
+              echo "CHANGED_IMAGE=${image_name}:${version}" >> "$GITHUB_ENV"
             fi
           }
 
