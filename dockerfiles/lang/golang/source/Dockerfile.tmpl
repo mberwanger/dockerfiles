@@ -27,7 +27,7 @@ RUN set -eux; \
  && echo "$GOLANG_DOWNLOAD_SHA256  golang.tar.gz" | sha256sum -c - \
  && tar -C /usr/local -xzf golang.tar.gz \
  && rm golang.tar.gz \
- && go version
+ && /usr/local/go/bin/go version
 
 # Install git and make for Go development
 RUN apt-get update \

@@ -1,0 +1,193 @@
+name: 'Build Single Dockerfile'
+description: 'Build and optionally push a Docker image from a Dockerfile'
+inputs:
+  dockerfile_path:
+    description: 'Path to the Dockerfile directory'
+    required: true
+  image_name:
+    description: 'Image name (e.g., tini, core, python)'
+    required: true
+  image_tag:
+    description: 'Image tag (e.g., v0.19.0, bookworm, 3.11)'
+    required: true
+  force_push:
+    description: 'Force push even if no changes detected'
+    required: false
+    default: 'false'
+  registry:
+    description: 'Container registry URL'
+    required: true
+  registry_username:
+    description: 'Registry username'
+    required: true
+  registry_password:
+    description: 'Registry password'
+    required: true
+  root_path:
+    description: 'Root path for image naming'
+    required: true
+  is_main_branch:
+    description: 'Whether this is running on main branch'
+    required: false
+    default: 'false'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - name: Login to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ inputs.registry }}
+        username: ${{ inputs.registry_username }}
+        password: ${{ inputs.registry_password }}
+
+    - name: Generate build metadata
+      id: meta
+      shell: bash
+      run: |
+        # Generate build timestamp
+        BUILD_DATE=$(date -u +"%Y%m%d")
+        BUILD_TIMESTAMP=$(date -u +"%Y%m%dT%H%M%SZ")
+
+        # Generate short commit SHA
+        COMMIT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+
+        # Primary tag
+        PRIMARY_TAG="${{ inputs.root_path }}/${{ inputs.image_name }}:${{ inputs.image_tag }}"
+
+        # Additional tags with build metadata
+        DATE_TAG="${{ inputs.root_path }}/${{ inputs.image_name }}:${{ inputs.image_tag }}-${BUILD_DATE}"
+        COMMIT_TAG="${{ inputs.root_path }}/${{ inputs.image_name }}:${{ inputs.image_tag }}-${COMMIT_SHA}"
+
+        echo "primary_tag=${PRIMARY_TAG}" >> $GITHUB_OUTPUT
+        echo "date_tag=${DATE_TAG}" >> $GITHUB_OUTPUT
+        echo "commit_tag=${COMMIT_TAG}" >> $GITHUB_OUTPUT
+        echo "build_date=${BUILD_DATE}" >> $GITHUB_OUTPUT
+        echo "build_timestamp=${BUILD_TIMESTAMP}" >> $GITHUB_OUTPUT
+        echo "commit_sha=${COMMIT_SHA}" >> $GITHUB_OUTPUT
+
+    - name: Build and analyze image
+      id: build
+      shell: bash
+      env:
+        DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
+        PRIMARY_TAG: ${{ steps.meta.outputs.primary_tag }}
+        DATE_TAG: ${{ steps.meta.outputs.date_tag }}
+        COMMIT_TAG: ${{ steps.meta.outputs.commit_tag }}
+        BUILD_DATE: ${{ steps.meta.outputs.build_date }}
+        BUILD_TIMESTAMP: ${{ steps.meta.outputs.build_timestamp }}
+        COMMIT_SHA: ${{ steps.meta.outputs.commit_sha }}
+        FORCE_PUSH: ${{ inputs.force_push }}
+        IS_MAIN_BRANCH: ${{ inputs.is_main_branch }}
+      run: |
+        set -eux
+
+        # Check if multi-platform build is needed
+        platforms="linux/amd64,linux/arm64"
+
+        # Set up cache directory
+        cache_dir="${DOCKERFILE_PATH}/cache_result"
+        mkdir -p "$cache_dir"
+
+        # Check if image exists in registry
+        image_exists="false"
+        if docker manifest inspect "$PRIMARY_TAG" >/dev/null 2>&1; then
+          image_exists="true"
+          before_manifest=$(docker manifest inspect "$PRIMARY_TAG" | jq -r '.manifests[]?.digest // empty' | sort)
+        else
+          echo "🆕 Image doesn't exist in registry: $PRIMARY_TAG"
+          before_manifest=""
+        fi
+
+        # Prepare all tags for build
+        BUILD_TAGS="--tag=$PRIMARY_TAG --tag=$DATE_TAG --tag=$COMMIT_TAG"
+
+        # Build with cache
+        echo "🔨 Building $PRIMARY_TAG for platforms: $platforms"
+        echo "📅 Additional tags: $DATE_TAG, $COMMIT_TAG"
+
+        if ! docker buildx build \
+          --build-arg ROOT_PATH="${{ inputs.root_path }}" \
+          --build-arg BUILD_DATE="$BUILD_DATE" \
+          --build-arg BUILD_TIMESTAMP="$BUILD_TIMESTAMP" \
+          --build-arg COMMIT_SHA="$COMMIT_SHA" \
+          --cache-from="type=registry,ref=$PRIMARY_TAG" \
+          --cache-to="type=local,dest=$cache_dir" \
+          --platform="$platforms" \
+          $BUILD_TAGS \
+          --progress=plain \
+          "$DOCKERFILE_PATH" 2>&1; then
+          echo "❌ Build failed for $DOCKERFILE_PATH ($PRIMARY_TAG)"
+          echo "❌ Platforms: $platforms"
+          echo "❌ Check logs above for detailed error information"
+          exit 1
+        fi
+
+        # Check for changes using cache layers
+        after_manifest=""
+        if [ -f "$cache_dir/index.json" ]; then
+          after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
+        else
+          after_manifest="new-build"
+        fi
+
+        # Determine if we should push
+        should_push="false"
+        if [ "$image_exists" == "false" ]; then
+          echo "✅ New image will be pushed: $DOCKERFILE_PATH"
+          should_push="true"
+        elif [ "$before_manifest" != "$after_manifest" ]; then
+          echo "✅ Image changes detected for $DOCKERFILE_PATH"
+          should_push="true"
+        elif [ "$FORCE_PUSH" == "true" ]; then
+          echo "🔄 Force push enabled for $DOCKERFILE_PATH"
+          should_push="true"
+        else
+          echo "⏭️  No changes detected for $DOCKERFILE_PATH"
+        fi
+
+        echo "should_push=${should_push}" >> $GITHUB_OUTPUT
+
+    - name: Push image
+      if: steps.build.outputs.should_push == 'true' && (inputs.is_main_branch == 'true' || inputs.force_push == 'true')
+      shell: bash
+      env:
+        DOCKERFILE_PATH: ${{ inputs.dockerfile_path }}
+        PRIMARY_TAG: ${{ steps.meta.outputs.primary_tag }}
+        DATE_TAG: ${{ steps.meta.outputs.date_tag }}
+        COMMIT_TAG: ${{ steps.meta.outputs.commit_tag }}
+      run: |
+        set -eux
+
+        platforms="linux/amd64,linux/arm64"
+
+        # Prepare all tags for push
+        PUSH_TAGS="--tag=$PRIMARY_TAG --tag=$DATE_TAG --tag=$COMMIT_TAG"
+
+        echo "🚀 Pushing $DOCKERFILE_PATH with tags:"
+        echo "   📦 Primary: $PRIMARY_TAG"
+        echo "   📅 Date: $DATE_TAG"
+        echo "   🔗 Commit: $COMMIT_TAG"
+
+        if ! docker buildx build \
+          --build-arg ROOT_PATH="${{ inputs.root_path }}" \
+          --build-arg BUILD_DATE="${{ steps.meta.outputs.build_date }}" \
+          --build-arg BUILD_TIMESTAMP="${{ steps.meta.outputs.build_timestamp }}" \
+          --build-arg COMMIT_SHA="${{ steps.meta.outputs.commit_sha }}" \
+          --cache-from="type=registry,ref=$PRIMARY_TAG" \
+          --platform="$platforms" \
+          --push \
+          $PUSH_TAGS \
+          --progress=plain \
+          "$DOCKERFILE_PATH" 2>&1; then
+          echo "❌ Push failed for $DOCKERFILE_PATH ($PRIMARY_TAG)"
+          echo "❌ Platforms: $platforms"
+          exit 1
+        fi
+
+        echo "✅ Successfully pushed $PRIMARY_TAG with metadata tags"

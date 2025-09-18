@@ -31,106 +31,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build tini:v0.19.0
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/base/tini/v0.19.0
+          image_name: tini
+          image_tag: v0.19.0
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push tini:v0.19.0
-        env:
-          DOCKERFILE_PATH: dockerfiles/base/tini/v0.19.0
-          IMAGE_NAME: tini
-          IMAGE_TAG: v0.19.0
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   base-core-bookworm:
     name: "Build core:bookworm"
@@ -140,106 +52,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build core:bookworm
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/base/core/bookworm
+          image_name: core
+          image_tag: bookworm
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push core:bookworm
-        env:
-          DOCKERFILE_PATH: dockerfiles/base/core/bookworm
-          IMAGE_NAME: core
-          IMAGE_TAG: bookworm
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   base-core-bullseye:
     name: "Build core:bullseye"
@@ -249,106 +73,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build core:bullseye
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/base/core/bullseye
+          image_name: core
+          image_tag: bullseye
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push core:bullseye
-        env:
-          DOCKERFILE_PATH: dockerfiles/base/core/bullseye
-          IMAGE_NAME: core
-          IMAGE_TAG: bullseye
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   base-core-trixie:
     name: "Build core:trixie"
@@ -358,106 +94,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build core:trixie
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/base/core/trixie
+          image_name: core
+          image_tag: trixie
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push core:trixie
-        env:
-          DOCKERFILE_PATH: dockerfiles/base/core/trixie
-          IMAGE_NAME: core
-          IMAGE_TAG: trixie
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-corretto-21:
     name: "Build corretto:21"
@@ -467,106 +115,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build corretto:21
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/corretto/21
+          image_name: corretto
+          image_tag: 21
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push corretto:21
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/corretto/21
-          IMAGE_NAME: corretto
-          IMAGE_TAG: 21
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-corretto-22:
     name: "Build corretto:22"
@@ -576,106 +136,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build corretto:22
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/corretto/22
+          image_name: corretto
+          image_tag: 22
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push corretto:22
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/corretto/22
-          IMAGE_NAME: corretto
-          IMAGE_TAG: 22
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-corretto-24:
     name: "Build corretto:24"
@@ -685,106 +157,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build corretto:24
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/corretto/24
+          image_name: corretto
+          image_tag: 24
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push corretto:24
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/corretto/24
-          IMAGE_NAME: corretto
-          IMAGE_TAG: 24
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-golang-1-25:
     name: "Build golang:1.25"
@@ -794,106 +178,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build golang:1.25
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/golang/1.25
+          image_name: golang
+          image_tag: 1.25
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push golang:1.25
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/golang/1.25
-          IMAGE_NAME: golang
-          IMAGE_TAG: 1.25
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-python-3-11:
     name: "Build python:3.11"
@@ -903,106 +199,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build python:3.11
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/python/3.11
+          image_name: python
+          image_tag: 3.11
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push python:3.11
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/python/3.11
-          IMAGE_NAME: python
-          IMAGE_TAG: 3.11
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-python-3-12:
     name: "Build python:3.12"
@@ -1012,106 +220,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build python:3.12
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/python/3.12
+          image_name: python
+          image_tag: 3.12
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push python:3.12
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/python/3.12
-          IMAGE_NAME: python
-          IMAGE_TAG: 3.12
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
   lang-python-3-13:
     name: "Build python:3.13"
@@ -1121,106 +241,18 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build python:3.13
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: dockerfiles/lang/python/3.13
+          image_name: python
+          image_tag: 3.13
+          force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push python:3.13
-        env:
-          DOCKERFILE_PATH: dockerfiles/lang/python/3.13
-          IMAGE_NAME: python
-          IMAGE_TAG: 3.13
-          FORCE_PUSH: ${{ inputs.force_push || 'false' }}
-          IS_MAIN_BRANCH: ${{ github.ref == 'refs/heads/master' }}
-          ROOT_PATH: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
 
   # Notify about build results

@@ -383,106 +383,18 @@ jobs:{{range .Jobs}}
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      - name: Build {{.ImageName}}:{{.ImageTag}}
+        uses: ./.github/actions/build-dockerfile
         with:
-          platforms: linux/amd64,linux/arm64
-
-      - name: Login to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
+          dockerfile_path: {{.DockerfilePath}}
+          image_name: {{.ImageName}}
+          image_tag: {{.ImageTag}}
+          force_push: ${{ "{{" }} inputs.force_push || 'false' {{ "}}" }}
           registry: ${{ "{{" }} env.REGISTRY {{ "}}" }}
-          username: ${{ "{{" }} github.actor {{ "}}" }}
-          password: ${{ "{{" }} secrets.GITHUB_TOKEN {{ "}}" }}
-
-      - name: Build and push {{.ImageName}}:{{.ImageTag}}
-        env:
-          DOCKERFILE_PATH: {{.DockerfilePath}}
-          IMAGE_NAME: {{.ImageName}}
-          IMAGE_TAG: {{.ImageTag}}
-          FORCE_PUSH: ${{ "{{" }} inputs.force_push || 'false' {{ "}}" }}
-          IS_MAIN_BRANCH: ${{ "{{" }} github.ref == 'refs/heads/master' {{ "}}" }}
-          ROOT_PATH: ${{ "{{" }} env.REGISTRY {{ "}}" }}/${{ "{{" }} github.repository_owner {{ "}}" }}
-        run: |
-          set -eux
-
-          # Build image tag
-          image_tag="${ROOT_PATH}/${IMAGE_NAME}:${IMAGE_TAG}"
-
-          # Check if multi-platform build is needed
-          platforms="linux/amd64,linux/arm64"
-
-          # Set up cache directory
-          cache_dir="${DOCKERFILE_PATH}/cache_result"
-          mkdir -p "$cache_dir"
-
-          # Check if image exists in registry
-          image_exists="false"
-          if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
-            image_exists="true"
-            before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
-          else
-            echo "🆕 Image doesn't exist in registry: $image_tag"
-            before_manifest=""
-          fi
-
-          # Build with cache
-          echo "🔨 Building $image_tag for platforms: $platforms"
-          if ! docker buildx build \
-            --build-arg ROOT_PATH="$ROOT_PATH" \
-            --cache-from="type=registry,ref=$image_tag" \
-            --cache-to="type=local,dest=$cache_dir" \
-            --platform="$platforms" \
-            --tag="$image_tag" \
-            --progress=plain \
-            "$DOCKERFILE_PATH" 2>&1; then
-            echo "❌ Build failed for $DOCKERFILE_PATH ($image_tag)"
-            echo "❌ Platforms: $platforms"
-            echo "❌ Check logs above for detailed error information"
-            exit 1
-          fi
-
-          # Check for changes using cache layers
-          after_manifest=""
-          if [ -f "$cache_dir/index.json" ]; then
-            after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
-          else
-            after_manifest="new-build"
-          fi
-
-          # Push if changes detected or forced or image doesn't exist
-          should_push="false"
-          if [ "$image_exists" == "false" ]; then
-            echo "✅ New image will be pushed: $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$before_manifest" != "$after_manifest" ]; then
-            echo "✅ Image changes detected for $DOCKERFILE_PATH"
-            should_push="true"
-          elif [ "$FORCE_PUSH" == "true" ]; then
-            echo "🔄 Force push enabled for $DOCKERFILE_PATH"
-            should_push="true"
-          else
-            echo "⏭️  No changes detected for $DOCKERFILE_PATH"
-          fi
-
-          # Push images if needed and on main branch or forced
-          if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-            echo "🚀 Pushing $DOCKERFILE_PATH to $image_tag"
-            if ! docker buildx build \
-              --build-arg ROOT_PATH="$ROOT_PATH" \
-              --cache-from="type=registry,ref=$image_tag" \
-              --platform="$platforms" \
-              --push \
-              --tag="$image_tag" \
-              --progress=plain \
-              "$DOCKERFILE_PATH" 2>&1; then
-              echo "❌ Push failed for $DOCKERFILE_PATH ($image_tag)"
-              echo "❌ Platforms: $platforms"
-              exit 1
-            fi
-
-            echo "✅ Successfully pushed $image_tag"
-          fi
+          registry_username: ${{ "{{" }} github.actor {{ "}}" }}
+          registry_password: ${{ "{{" }} secrets.GITHUB_TOKEN {{ "}}" }}
+          root_path: ${{ "{{" }} env.REGISTRY {{ "}}" }}/${{ "{{" }} github.repository_owner {{ "}}" }}
+          is_main_branch: ${{ "{{" }} github.ref == 'refs/heads/master' {{ "}}" }}
 {{end}}
 
   # Notify about build results
