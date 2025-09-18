@@ -169,17 +169,19 @@ jobs:
 
           # Start all builds in this batch in parallel (background processes)
           pids=()
-          echo "$DOCKERFILES" | jq -r '.[]' | while read -r dockerfile_path; do
+          # Use process substitution to avoid subshell
+          while IFS= read -r dockerfile_path; do
             if [ -n "$dockerfile_path" ]; then
+              echo "Starting build for $dockerfile_path"
               build_image "$dockerfile_path" &
               pids+=($!)
             fi
-          done
+          done < <(echo "$DOCKERFILES" | jq -r '.[]')
 
           # Wait for all builds in this batch to complete
-          echo "⏳ Waiting for batch $BATCH_NUM builds to complete..."
+          echo "⏳ Waiting for batch $BATCH_NUM builds to complete (${#pids[@]} jobs)..."
           for pid in "${pids[@]}"; do
-            wait "$pid"
+            wait "$pid" || echo "Build job $pid failed with exit code $?"
           done
           echo "✅ Batch $BATCH_NUM completed"
 
