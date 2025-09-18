@@ -107,9 +107,12 @@ jobs:
             image_tag="${ROOT_PATH}/${image_name}:${version}"
 
             # Check if multi-platform build is needed
-            if grep -q "TARGETPLATFORM" "$dockerfile_path/Dockerfile"; then
-              platforms="linux/amd64,linux/arm64"
-            else
+            # Most images support multi-platform except those that explicitly don't
+            platforms="linux/amd64,linux/arm64"
+
+            # Check if this image should be single-platform only
+            # (You can add specific exclusions here if needed)
+            if [[ "$dockerfile_path" =~ "specific-amd64-only-pattern" ]]; then
               platforms="linux/amd64"
             fi
 
