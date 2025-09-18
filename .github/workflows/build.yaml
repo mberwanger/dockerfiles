@@ -19,6 +19,10 @@ on:
 env:
   REGISTRY: ghcr.io
 
+permissions:
+  contents: read
+  packages: write
+
 jobs:
   # Generate CI index to determine build order
   generate-index:

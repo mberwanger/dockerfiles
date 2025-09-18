@@ -16,9 +16,12 @@ RUN apkArch="$(apk --print-arch)"; \
   wget -O /tini https://github.com/krallin/tini/releases/download/{{ index .Values "version" }}/tini$PLATFORM ;\
   wget -O /tini.asc https://github.com/krallin/tini/releases/download/{{ index .Values "version" }}/tini$PLATFORM.asc
 
-ARG KEYSERVERS="ipv4.pool.sks-keyservers.net pgp.mit.edu keyserver.ubuntu.com"
+ARG KEYSERVERS="keyserver.ubuntu.com keys.openpgp.org hkps://keyserver.ubuntu.com:443"
 RUN --mount=type=cache,target=/var/cache/apk \
   set -eux; \
-  for ks in ${KEYSERVERS}; do gpg --no-tty --keyserver "${ks}" --recv-keys {{ index .Values "gpg_key" }} && break; done \
+  for ks in ${KEYSERVERS}; do \
+    echo "Trying keyserver: $ks"; \
+    gpg --no-tty --keyserver-options timeout=10 --keyserver "${ks}" --recv-keys {{ index .Values "gpg_key" }} && break; \
+  done \
   && gpg --no-tty --batch --verify /tini.asc /tini \
   && chmod +x /tini
