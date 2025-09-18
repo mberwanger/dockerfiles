@@ -1,0 +1,26 @@
+{{ generation_message }}
+{{ from_image (index .Values "base_image") }}
+
+LABEL org.opencontainers.image.authors="Martin Berwanger" \
+      org.opencontainers.image.title="Amazon Corretto JDK {{ index .Values "java_version" }}" \
+      org.opencontainers.image.description="Amazon Corretto OpenJDK distribution"
+
+USER root
+
+# Install Corretto JDK in single layer with modern GPG handling
+RUN --mount=type=cache,target=/var/cache/apt \
+    --mount=type=cache,target=/var/lib/apt/lists \
+    set -eux; \
+    mkdir -p /etc/apt/keyrings \
+ && curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor > /etc/apt/keyrings/corretto.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/corretto.gpg] https://apt.corretto.aws stable main" > /etc/apt/sources.list.d/corretto.list \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+        java-{{ index .Values "java_version" }}-amazon-corretto-jdk \
+ && rm -rf /tmp/* /var/tmp/*
+
+# Set JAVA_HOME and PATH
+ENV JAVA_HOME=/usr/lib/jvm/java-{{ index .Values "java_version" }}-amazon-corretto
+ENV PATH="/usr/lib/jvm/java-{{ index .Values "java_version" }}-amazon-corretto/bin:${PATH}"
+
+USER docker

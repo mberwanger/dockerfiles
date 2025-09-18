@@ -1,0 +1,67 @@
+config:
+  registry: ghcr.io/mberwanger
+
+dockerfiles:
+  core:
+    versions:
+      bullseye:
+        base_image:
+          name: debian:bullseye-slim
+          source: dockerhub
+      bookworm:
+        base_image:
+          name: debian:bookworm-slim
+          source: dockerhub
+      trixie:
+        base_image:
+          name: debian:trixie-slim
+          source: dockerhub
+
+  corretto:
+    defaults:
+      base_image: core:bullseye
+    versions:
+      "21":
+        java_version: 21
+      "22":
+        java_version: 22
+      "24":
+        java_version: 24
+
+  golang:
+    defaults:
+      base_image: core:bullseye
+    versions:
+      "1.25":
+        full_version: 1.25.1
+        package_sha_amd64: 7716a0d940a0f6ae8e1f3b3f4f36299dc53e31b16840dbd171254312c41ca12e
+        package_sha_arm64: 65a3e34fb2126f55b34e1edfc709121660e1be2dee6bdf405fc399a63a95a87d
+
+  python:
+    defaults:
+      base_image: core:bullseye
+    versions:
+      "3.11":
+        python_version: 3.11.13
+        python_build_version: "3.11"
+        pip_version: 24.3.1
+        python_pgp_key_id: 64E628F8D684696D
+      "3.12":
+        python_version: 3.12.11
+        python_build_version: "3.12"
+        pip_version: 24.3.1
+        python_pgp_key_id: A821E680E5FA6305
+      "3.13":
+        python_version: 3.13.7
+        python_build_version: "3.13"
+        pip_version: 25.2
+        python_pgp_key_id: A821E680E5FA6305
+
+  tini:
+    defaults:
+      base_image:
+        name: alpine
+        source: dockerhub
+      gpg_key: 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7
+    versions:
+      "v0.19.0": {}
