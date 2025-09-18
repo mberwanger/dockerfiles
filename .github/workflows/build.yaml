@@ -113,10 +113,14 @@ jobs:
             cache_dir="$dockerfile_path/cache_result"
             mkdir -p "$cache_dir"
 
-            # Get existing manifest for change detection
-            before_manifest=""
+            # Check if image exists in registry
+            image_exists="false"
             if docker manifest inspect "$image_tag" >/dev/null 2>&1; then
+              image_exists="true"
               before_manifest=$(docker manifest inspect "$image_tag" | jq -r '.manifests[]?.digest // empty' | sort)
+            else
+              echo "🆕 Image doesn't exist in registry: $image_tag"
+              before_manifest=""
             fi
 
             # Build with cache
@@ -131,12 +135,17 @@ jobs:
             # Check for changes using cache layers
             after_manifest=""
             if [ -f "$cache_dir/index.json" ]; then
-              after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "")
+              after_manifest=$(ci/get-cache-layers.sh "$cache_dir" 2>/dev/null || echo "new-build")
+            else
+              after_manifest="new-build"
             fi
 
-            # Push if changes detected or forced
+            # Push if changes detected or forced or image doesn't exist
             should_push="false"
-            if [ "$before_manifest" != "$after_manifest" ]; then
+            if [ "$image_exists" == "false" ]; then
+              echo "✅ New image will be pushed: $dockerfile_path"
+              should_push="true"
+            elif [ "$before_manifest" != "$after_manifest" ]; then
               echo "✅ Image changes detected for $dockerfile_path"
               should_push="true"
             elif [ "$FORCE_PUSH" == "true" ]; then
