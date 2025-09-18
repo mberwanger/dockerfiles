@@ -12,10 +12,11 @@ import (
 
 func main() {
 	var (
-		generateAll  = flag.Bool("generate-all", false, "Generate all Dockerfiles")
-		generateImg  = flag.String("generate", "", "Generate Dockerfiles for specific image")
-		depIndex     = flag.Bool("dependency-index", false, "Generate dependency index for CI")
-		manifestFile = flag.String("manifest", "dockerfiles/manifest.yaml", "Path to manifest file")
+		generateAll      = flag.Bool("generate-all", false, "Generate all Dockerfiles")
+		generateImg      = flag.String("generate", "", "Generate Dockerfiles for specific image")
+		depIndex         = flag.Bool("dependency-index", false, "Generate dependency index for CI")
+		generateWorkflow = flag.String("generate-workflow", "", "Generate GitHub Actions workflow file")
+		manifestFile     = flag.String("manifest", "dockerfiles/manifest.yaml", "Path to manifest file")
 	)
 	flag.Parse()
 
@@ -49,6 +50,12 @@ func main() {
 		}
 
 		fmt.Print(string(jsonOutput))
+
+	case *generateWorkflow != "":
+		if err := builder.GenerateWorkflow(".", *generateWorkflow); err != nil {
+			log.Fatalf("Failed to generate workflow: %v", err)
+		}
+		fmt.Printf("✅ Workflow generated successfully: %s\n", *generateWorkflow)
 
 	default:
 		flag.Usage()

@@ -1,4 +1,4 @@
-.PHONY: help build generate generate-all dependency-index clean test
+.PHONY: help build generate generate-all dependency-index generate-workflow clean test
 
 # Default target
 .DEFAULT_GOAL := help
@@ -32,6 +32,10 @@ generate: build ## Generate Dockerfiles for specific image (usage: make generate
 
 dependency-index: build ## Generate dependency index for CI
 	@./$(BUILD_DIR)/$(BINARY_NAME) -dependency-index
+
+generate-workflow: build ## Generate dynamic GitHub Actions workflow
+	@echo "Generating dynamic workflow..."
+	@./$(BUILD_DIR)/$(BINARY_NAME) -generate-workflow .github/workflows/build-dynamic.yaml
 
 clean: ## Clean build artifacts
 	@echo "Cleaning..."
