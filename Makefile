@@ -14,7 +14,7 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  %-15s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 
 build: ## Build the binary
-	@echo "Building $(BINARY_NAME)..."
+	@echo "Building $(BINARY_NAME)..." >&2
 	@mkdir -p $(BUILD_DIR)
 	@go build -o $(BUILD_DIR)/$(BINARY_NAME) ./tooling/cmd
 
@@ -31,7 +31,6 @@ generate: build ## Generate Dockerfiles for specific image (usage: make generate
 	@./$(BUILD_DIR)/$(BINARY_NAME) -generate $(IMAGE)
 
 dependency-index: build ## Generate dependency index for CI
-	@echo "Generating dependency index..."
 	@./$(BUILD_DIR)/$(BINARY_NAME) -dependency-index
 
 clean: ## Clean build artifacts
