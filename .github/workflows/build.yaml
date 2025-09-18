@@ -128,13 +128,16 @@ jobs:
             fi
 
             # Build with cache
-            docker buildx build \
+            if ! docker buildx build \
               --build-arg ROOT_PATH="$ROOT_PATH" \
               --cache-from="type=registry,ref=$image_tag" \
               --cache-to="type=local,dest=$cache_dir" \
               --platform="$platforms" \
               --tag="$image_tag" \
-              "$dockerfile_path"
+              "$dockerfile_path"; then
+              echo "❌ Build failed for $dockerfile_path"
+              return 1
+            fi
 
             # Check for changes using cache layers
             after_manifest=""
@@ -162,13 +165,16 @@ jobs:
             # Push images if needed and on main branch or forced
             if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
               echo "🚀 Pushing $dockerfile_path"
-              docker buildx build \
+              if ! docker buildx build \
                 --build-arg ROOT_PATH="$ROOT_PATH" \
                 --cache-from="type=registry,ref=$image_tag" \
                 --platform="$platforms" \
                 --push \
                 --tag="$image_tag" \
-                "$dockerfile_path"
+                "$dockerfile_path"; then
+                echo "❌ Push failed for $dockerfile_path"
+                return 1
+              fi
 
               echo "CHANGED_IMAGE=${image_name}:${version}" >> "$GITHUB_ENV"
             fi
@@ -193,10 +199,20 @@ jobs:
 
           # Wait for all builds in this batch to complete
           echo "⏳ Waiting for batch $BATCH_NUM builds to complete (${#pids[@]} jobs)..."
+          failed=0
           for pid in "${pids[@]}"; do
-            wait "$pid" || echo "Build job $pid failed with exit code $?"
+            if ! wait "$pid"; then
+              echo "❌ Build job $pid failed with exit code $?"
+              failed=1
+            fi
           done
-          echo "✅ Batch $BATCH_NUM completed"
+
+          if [ "$failed" -eq 1 ]; then
+            echo "❌ Batch $BATCH_NUM failed"
+            exit 1
+          else
+            echo "✅ Batch $BATCH_NUM completed successfully"
+          fi
 
       - name: Report changes
         if: env.CHANGED_IMAGE
