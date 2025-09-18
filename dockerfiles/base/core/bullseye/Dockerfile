@@ -13,8 +13,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
+RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-bullseye \
+    --mount=type=cache,target=/var/lib/apt,id=apt-lib-bullseye \
     apt-get update \
  && apt-get install -y --no-install-recommends \
         ca-certificates \

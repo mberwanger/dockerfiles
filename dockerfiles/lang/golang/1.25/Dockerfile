@@ -33,8 +33,8 @@ RUN set -eux; \
  && go version
 
 # Install git and make for Go development
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt/lists \
+RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-golang-1.25 \
+    --mount=type=cache,target=/var/lib/apt/lists,id=apt-lib-golang-1.25 \
     apt-get update \
  && apt-get install -y --no-install-recommends \
         git \
