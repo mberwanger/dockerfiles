@@ -16,9 +16,7 @@ ARG PIP_VERSION=24.3.1
 ARG PGP_KEY_ID=64E628F8D684696D
 
 # Install Python build dependencies and compile from source
-RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-python-3.11 \
-    --mount=type=cache,target=/var/lib/apt/lists,id=apt-lib-python-3.11 \
-    set -eux; \
+RUN set -eux; \
     apt-get update \
  && apt-get install -y --no-install-recommends \
         build-essential \

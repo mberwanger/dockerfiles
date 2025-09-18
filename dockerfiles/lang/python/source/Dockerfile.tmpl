@@ -13,9 +13,7 @@ ARG PIP_VERSION={{ index .Values "pip_version" }}
 ARG PGP_KEY_ID={{ index .Values "python_pgp_key_id" }}
 
 # Install Python build dependencies and compile from source
-RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-python-{{ .Version }} \
-    --mount=type=cache,target=/var/lib/apt/lists,id=apt-lib-python-{{ .Version }} \
-    set -eux; \
+RUN set -eux; \
     apt-get update \
  && apt-get install -y --no-install-recommends \
         build-essential \

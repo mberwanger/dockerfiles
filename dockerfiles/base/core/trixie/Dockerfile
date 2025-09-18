@@ -13,9 +13,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
-RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-trixie \
-    --mount=type=cache,target=/var/lib/apt,id=apt-lib-trixie \
-    apt-get update \
+RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \

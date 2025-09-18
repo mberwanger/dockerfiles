@@ -10,9 +10,7 @@ ENV DEBIAN_FRONTEND=noninteractive \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
 
-RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-{{ .Version }} \
-    --mount=type=cache,target=/var/lib/apt,id=apt-lib-{{ .Version }} \
-    apt-get update \
+RUN apt-get update \
  && apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \

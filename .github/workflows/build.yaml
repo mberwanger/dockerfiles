@@ -131,14 +131,18 @@ jobs:
             fi
 
             # Build with cache
+            echo "🔨 Building $image_tag for platforms: $platforms"
             if ! docker buildx build \
               --build-arg ROOT_PATH="$ROOT_PATH" \
               --cache-from="type=registry,ref=$image_tag" \
               --cache-to="type=local,dest=$cache_dir" \
               --platform="$platforms" \
               --tag="$image_tag" \
-              "$dockerfile_path"; then
-              echo "❌ Build failed for $dockerfile_path"
+              --progress=plain \
+              "$dockerfile_path" 2>&1; then
+              echo "❌ Build failed for $dockerfile_path ($image_tag)"
+              echo "❌ Platforms: $platforms"
+              echo "❌ Check logs above for detailed error information"
               return 1
             fi
 
@@ -167,15 +171,17 @@ jobs:
 
             # Push images if needed and on main branch or forced
             if [ "$should_push" == "true" ] && ([ "$IS_MAIN_BRANCH" == "true" ] || [ "$FORCE_PUSH" == "true" ]); then
-              echo "🚀 Pushing $dockerfile_path"
+              echo "🚀 Pushing $dockerfile_path to $image_tag"
               if ! docker buildx build \
                 --build-arg ROOT_PATH="$ROOT_PATH" \
                 --cache-from="type=registry,ref=$image_tag" \
                 --platform="$platforms" \
                 --push \
                 --tag="$image_tag" \
-                "$dockerfile_path"; then
-                echo "❌ Push failed for $dockerfile_path"
+                --progress=plain \
+                "$dockerfile_path" 2>&1; then
+                echo "❌ Push failed for $dockerfile_path ($image_tag)"
+                echo "❌ Platforms: $platforms"
                 return 1
               fi
 

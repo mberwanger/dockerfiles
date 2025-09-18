@@ -11,9 +11,7 @@ LABEL org.opencontainers.image.authors="Martin Berwanger" \
 USER root
 
 # Install Corretto JDK in single layer with modern GPG handling
-RUN --mount=type=cache,target=/var/cache/apt,id=apt-cache-corretto-24 \
-    --mount=type=cache,target=/var/lib/apt/lists,id=apt-lib-corretto-24 \
-    set -eux; \
+RUN set -eux; \
     mkdir -p /etc/apt/keyrings \
  && curl -fsSL https://apt.corretto.aws/corretto.key | gpg --dearmor > /etc/apt/keyrings/corretto.gpg \
  && echo "deb [signed-by=/etc/apt/keyrings/corretto.gpg] https://apt.corretto.aws stable main" > /etc/apt/sources.list.d/corretto.list \
