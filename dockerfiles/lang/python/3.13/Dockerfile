@@ -15,43 +15,26 @@ ARG PYTHON_MAJOR_MINOR_VERSION=3.13
 ARG PIP_VERSION=25.2
 ARG PYTHON_GPG_KEY=A821E680E5FA6305
 
-# Install Python build dependencies and compile from source
+# Install Python from deadsnakes PPA (much faster than compiling)
 RUN set -eux; \
     apt-get update \
  && apt-get install -y --no-install-recommends \
-        build-essential \
-        libbz2-dev \
-        libffi-dev \
-        libgdbm-dev \
-        liblzma-dev \
-        libncurses5-dev \
-        libnss3-dev \
-        libreadline-dev \
-        libsqlite3-dev \
-        libssl-dev \
-        xz-utils \
-        zlib1g-dev \
- && cd /tmp \
- && curl -fsSLO https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz \
- && curl -fsSLO https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tar.xz.asc \
- && export GNUPGHOME="$(mktemp -d)" \
- && gpg --batch --keyserver hkps://keys.openpgp.org --recv-keys ${PYTHON_GPG_KEY} || \
-    gpg --batch --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys ${PYTHON_GPG_KEY} \
- && gpg --verify Python-${PYTHON_VERSION}.tar.xz.asc Python-${PYTHON_VERSION}.tar.xz \
- && gpgconf --kill all \
- && rm -rf "$GNUPGHOME" \
- && tar -xf Python-${PYTHON_VERSION}.tar.xz \
- && cd Python-${PYTHON_VERSION} \
- && ./configure --enable-optimizations --with-lto --enable-shared \
- && make -j$(nproc) altinstall \
- && ldconfig \
- && cd / \
- && rm -rf /tmp/Python-${PYTHON_VERSION}* \
+        software-properties-common \
+        gpg-agent \
+ && add-apt-repository ppa:deadsnakes/ppa \
+ && apt-get update \
+ && apt-get install -y --no-install-recommends \
+        python${PYTHON_MAJOR_MINOR_VERSION} \
+        python${PYTHON_MAJOR_MINOR_VERSION}-dev \
+        python${PYTHON_MAJOR_MINOR_VERSION}-venv \
+        python${PYTHON_MAJOR_MINOR_VERSION}-distutils \
  && python${PYTHON_MAJOR_MINOR_VERSION} --version
 
 # Install pip and pipenv
-RUN pip${PYTHON_MAJOR_MINOR_VERSION} install --no-cache-dir --upgrade pip==${PIP_VERSION} \
- && pip${PYTHON_MAJOR_MINOR_VERSION} install --no-cache-dir pipenv
+RUN python${PYTHON_MAJOR_MINOR_VERSION} -m pip install --no-cache-dir --upgrade pip==${PIP_VERSION} \
+ && python${PYTHON_MAJOR_MINOR_VERSION} -m pip install --no-cache-dir pipenv \
+ && ln -sf python${PYTHON_MAJOR_MINOR_VERSION} /usr/bin/python3 \
+ && ln -sf python${PYTHON_MAJOR_MINOR_VERSION} /usr/bin/python
 
 # Setup working directory and user
 WORKDIR /usr/src/app/
