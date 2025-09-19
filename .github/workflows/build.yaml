@@ -44,19 +44,19 @@ jobs:
           root_path: ${{ env.REGISTRY }}/${{ github.repository_owner }}
           is_main_branch: ${{ github.ref == 'refs/heads/master' }}
 
-  util-yq-4-44-1:
-    name: "Build yq:4.44.1"
+  util-yq-4-47:
+    name: "Build yq:4.47"
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v5
 
-      - name: Build yq:4.44.1
+      - name: Build yq:4.47
         uses: ./.github/actions/build-dockerfile
         with:
-          dockerfile_path: dockerfiles/util/yq/4.44.1
+          dockerfile_path: dockerfiles/util/yq/4.47
           image_name: yq
-          image_tag: 4.44.1
+          image_tag: 4.47
           force_push: ${{ inputs.force_push || 'false' }}
           registry: ${{ env.REGISTRY }}
           registry_username: ${{ github.actor }}
@@ -67,7 +67,7 @@ jobs:
   base-core-bookworm:
     name: "Build core:bookworm"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1]
+    needs: [base-tini-v0-19-0, util-yq-4-47]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -88,7 +88,7 @@ jobs:
   base-core-bullseye:
     name: "Build core:bullseye"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1]
+    needs: [base-tini-v0-19-0, util-yq-4-47]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -109,7 +109,7 @@ jobs:
   base-core-trixie:
     name: "Build core:trixie"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1]
+    needs: [base-tini-v0-19-0, util-yq-4-47]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -130,7 +130,7 @@ jobs:
   lang-corretto-21:
     name: "Build corretto:21"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -151,7 +151,7 @@ jobs:
   lang-corretto-22:
     name: "Build corretto:22"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -172,7 +172,7 @@ jobs:
   lang-corretto-24:
     name: "Build corretto:24"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -193,7 +193,7 @@ jobs:
   lang-golang-1-25:
     name: "Build golang:1.25"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -214,7 +214,7 @@ jobs:
   lang-python-3-11:
     name: "Build python:3.11"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -235,7 +235,7 @@ jobs:
   lang-python-3-12:
     name: "Build python:3.12"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -256,7 +256,7 @@ jobs:
   lang-python-3-13:
     name: "Build python:3.13"
     runs-on: ubuntu-latest
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie]
     steps:
       - name: Checkout
         uses: actions/checkout@v5
@@ -277,7 +277,7 @@ jobs:
 
   # Notify about build results
   notify:
-    needs: [base-tini-v0-19-0, util-yq-4-44-1, base-core-bookworm, base-core-bullseye, base-core-trixie, lang-corretto-21, lang-corretto-22, lang-corretto-24, lang-golang-1-25, lang-python-3-11, lang-python-3-12, lang-python-3-13]
+    needs: [base-tini-v0-19-0, util-yq-4-47, base-core-bookworm, base-core-bullseye, base-core-trixie, lang-corretto-21, lang-corretto-22, lang-corretto-24, lang-golang-1-25, lang-python-3-11, lang-python-3-12, lang-python-3-13]
     if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:

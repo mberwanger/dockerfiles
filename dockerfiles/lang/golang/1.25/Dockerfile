@@ -6,7 +6,7 @@ FROM ${REGISTRY}/core:bullseye
 
 USER root
 
-ENV GOLANG_VERSION 1.25.1
+ENV GOLANG_VERSION=1.25.1
 
 # Multi-architecture support
 RUN set -eux; \

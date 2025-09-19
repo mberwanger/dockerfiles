@@ -3,7 +3,7 @@
 
 USER root
 
-ENV GOLANG_VERSION {{ index .Values "full_version" }}
+ENV GOLANG_VERSION={{ index .Values "full_version" }}
 
 # Multi-architecture support
 RUN set -eux; \

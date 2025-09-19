@@ -72,4 +72,4 @@ dockerfiles:
         name: alpine:3.22
         source: dockerhub
     versions:
-      '4.44.1': {}
+      '4.47': {}
