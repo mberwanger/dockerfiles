@@ -35,7 +35,7 @@ dependency-index: build ## Generate dependency index for CI
 
 generate-workflow: build ## Generate dynamic GitHub Actions workflow
 	@echo "Generating dynamic workflow..."
-	@./$(BUILD_DIR)/$(BINARY_NAME) -generate-workflow .github/workflows/build-dynamic.yaml
+	@./$(BUILD_DIR)/$(BINARY_NAME) -generate-workflow .github/workflows/build.yaml
 
 clean: ## Clean build artifacts
 	@echo "Cleaning..."

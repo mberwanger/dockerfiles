@@ -34,11 +34,11 @@ func GenerateImage(manifest Manifest, imageName string) error {
 	}
 
 	for version, values := range config.Versions {
-		fmt.Printf("- %s... ", version)
+		fmt.Printf("- %s ", version)
 
 		outputDir := GetOutputDir(imageName, version)
 
-		// Clean and create output directory
+		// Clean and create the output directory
 		if err := os.RemoveAll(outputDir); err != nil {
 			return fmt.Errorf("removing output directory %s: %w", outputDir, err)
 		}
