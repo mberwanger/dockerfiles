@@ -56,11 +56,15 @@ runs:
           type=raw,value=${{ inputs.image_tag }}-{{date 'YYYYMMDD'}}
           type=raw,value=${{ inputs.image_tag }}-{{sha}}
         labels: |
-          org.opencontainers.image.title=${{ inputs.image_name }}
+          org.opencontainers.image.title=${{ inputs.image_name }}:${{ inputs.image_tag }}
+          org.opencontainers.image.description=Biograph ${{ inputs.image_name }} container image
+          org.opencontainers.image.authors=Martin Berwanger
+          org.opencontainers.image.vendor=Biograph
           org.opencontainers.image.version=${{ inputs.image_tag }}
           org.opencontainers.image.source={{url}}
           org.opencontainers.image.revision={{sha}}
           org.opencontainers.image.created={{isotime}}
+          org.opencontainers.image.licenses=MIT
 
     - name: Build and push image
       uses: docker/build-push-action@ca877d9245402d1537745e0e356eab47c3520991 # v6.13.0

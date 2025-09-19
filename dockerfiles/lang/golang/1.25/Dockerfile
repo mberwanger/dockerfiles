@@ -4,10 +4,6 @@
 ARG REGISTRY=ghcr.io/mberwanger
 FROM ${REGISTRY}/core:bullseye
 
-LABEL org.opencontainers.image.authors="Martin Berwanger" \
-      org.opencontainers.image.title="Go Programming Language 1.25.1" \
-      org.opencontainers.image.description="Official Go language compiler and tools for building Go applications"
-
 USER root
 
 ENV GOLANG_VERSION 1.25.1

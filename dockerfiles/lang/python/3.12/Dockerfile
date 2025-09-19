@@ -4,10 +4,6 @@
 ARG REGISTRY=ghcr.io/mberwanger
 FROM ${REGISTRY}/core:bullseye
 
-LABEL org.opencontainers.image.authors="Martin Berwanger" \
-      org.opencontainers.image.title="Python 3.12.11" \
-      org.opencontainers.image.description="Python programming language runtime with pip and pipenv for application development"
-
 USER root
 
 ARG PYTHON_VERSION=3.12.11
@@ -61,14 +57,14 @@ RUN set -eux; \
         --without-ensurepip \
  && make -j "$(nproc)" \
  && make install \
+ && ldconfig \
  && rm -rf /usr/src/python \
  && python${PYTHON_MAJOR_MINOR_VERSION} --version \
  && find /usr/local -depth \
         \( \
             \( -type d -a \( -name test -o -name tests -o -name idle_test \) \) \
             -o \( -type f -a \( -name '*.pyc' -o -name '*.pyo' -o -name 'libpython*.a' \) \) \
-        \) -exec rm -rf '{}' + \
- && ldconfig
+        \) -exec rm -rf '{}' +
 
 # Install pip manually (since we compiled without ensurepip)
 RUN set -eux; \

@@ -3,10 +3,6 @@
 # task 'go run cmd/main.go -generate tini'
 FROM alpine
 
-LABEL org.opencontainers.image.authors="Martin Berwanger" \
-      org.opencontainers.image.title="Tini Init System" \
-      org.opencontainers.image.description="Minimal init system for containers with signal forwarding and zombie reaping"
-
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT

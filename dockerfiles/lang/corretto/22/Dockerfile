@@ -4,10 +4,6 @@
 ARG REGISTRY=ghcr.io/mberwanger
 FROM ${REGISTRY}/core:bullseye
 
-LABEL org.opencontainers.image.authors="Martin Berwanger" \
-      org.opencontainers.image.title="Amazon Corretto JDK 22" \
-      org.opencontainers.image.description="Amazon Corretto OpenJDK distribution"
-
 USER root
 
 # Install Corretto JDK in single layer with modern GPG handling

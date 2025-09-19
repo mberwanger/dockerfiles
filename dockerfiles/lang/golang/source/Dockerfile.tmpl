@@ -1,10 +1,6 @@
 {{ generation_message }}
 {{ from_image (index .Values "base_image") }}
 
-LABEL org.opencontainers.image.authors="Martin Berwanger" \
-      org.opencontainers.image.title="Go Programming Language {{ index .Values "full_version" }}" \
-      org.opencontainers.image.description="Official Go language compiler and tools for building Go applications"
-
 USER root
 
 ENV GOLANG_VERSION {{ index .Values "full_version" }}

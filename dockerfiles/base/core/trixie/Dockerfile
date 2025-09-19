@@ -5,10 +5,6 @@ ARG REGISTRY=ghcr.io/mberwanger
 FROM ${REGISTRY}/tini:v0.19.0 AS tini
 FROM debian:trixie-slim
 
-LABEL org.opencontainers.image.authors="Martin Berwanger" \
-      org.opencontainers.image.title="Biograph Core Base Image" \
-      org.opencontainers.image.description="Base Debian image with tini, locales, and docker user"
-
 ENV DEBIAN_FRONTEND=noninteractive \
     LANG=en_US.UTF-8 \
     LC_ALL=en_US.UTF-8
