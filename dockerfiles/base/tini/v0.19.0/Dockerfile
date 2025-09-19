@@ -1,26 +1,18 @@
 # GENERATED FILE, DO NOT MODIFY!
 # To update this file please edit the relevant source file and run the generation
 # task 'go run cmd/main.go -generate tini'
-
-ARG TARGETPLATFORM
-ARG TARGETARCH
-ARG TARGETVARIANT
-
 FROM alpine
 
-RUN apk add --no-cache gnupg wget
+RUN apk add --no-cache gnupg
 
 # Install Tini for init use (reaps defunct processes and forwards signals)
-# Use runtime architecture detection for compatibility
-RUN set -eux; \
-  apkArch="$(apk --print-arch)"; \
+RUN apkArch="$(apk --print-arch)"; \
   case "$apkArch" in \
     aarch64) export PLATFORM='-arm64' ;; \
     x86_64) export PLATFORM='' ;; \
-    *) echo "Unsupported architecture: $apkArch"; exit 1 ;; \
   esac; \
-  wget -O /tini https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM} ;\
-  wget -O /tini.asc https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM}.asc
+  wget -O /tini https://github.com/krallin/tini/releases/download/v0.19.0/tini$PLATFORM ;\
+  wget -O /tini.asc https://github.com/krallin/tini/releases/download/v0.19.0/tini$PLATFORM.asc
 
 ARG KEYSERVERS="keyserver.ubuntu.com keys.openpgp.org hkps://keyserver.ubuntu.com:443"
 RUN --mount=type=cache,target=/var/cache/apk \
