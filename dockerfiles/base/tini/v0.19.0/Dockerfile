@@ -1,7 +1,7 @@
 # GENERATED FILE, DO NOT MODIFY!
 # To update this file please edit the relevant source file and run the generation
 # task 'go run cmd/main.go -generate tini'
-FROM alpine
+FROM alpine:3.22
 
 RUN apk add --no-cache gnupg
 

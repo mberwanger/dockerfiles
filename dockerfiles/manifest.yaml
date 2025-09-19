@@ -60,8 +60,16 @@ dockerfiles:
   tini:
     defaults:
       base_image:
-        name: alpine
+        name: alpine:3.22
         source: dockerhub
       gpg_key: 595E85A6B1B4779EA4DAAEC70B588DFF0527A9B7
     versions:
       "v0.19.0": {}
+
+  yq:
+    defaults:
+      base_image:
+        name: alpine:3.22
+        source: dockerhub
+    versions:
+      '4.44.1': {}
