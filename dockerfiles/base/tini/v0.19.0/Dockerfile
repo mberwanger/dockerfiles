@@ -11,11 +11,13 @@ FROM alpine
 RUN apk add --no-cache gnupg wget
 
 # Install Tini for init use (reaps defunct processes and forwards signals)
+# Use runtime architecture detection for compatibility
 RUN set -eux; \
-  case "${TARGETARCH}" in \
-    arm64|aarch64) export PLATFORM='-arm64' ;; \
-    amd64|x86_64) export PLATFORM='' ;; \
-    *) echo "Unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+  apkArch="$(apk --print-arch)"; \
+  case "$apkArch" in \
+    aarch64) export PLATFORM='-arm64' ;; \
+    x86_64) export PLATFORM='' ;; \
+    *) echo "Unsupported architecture: $apkArch"; exit 1 ;; \
   esac; \
   wget -O /tini https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM} ;\
   wget -O /tini.asc https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM}.asc
