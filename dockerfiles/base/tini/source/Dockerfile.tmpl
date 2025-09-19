@@ -1,9 +1,10 @@
 {{ generation_message }}
-{{ from_image (index .Values "base_image") }}
 
 ARG TARGETPLATFORM
 ARG TARGETARCH
 ARG TARGETVARIANT
+
+{{ from_image (index .Values "base_image") }}
 
 RUN apk add --no-cache gnupg wget
 
