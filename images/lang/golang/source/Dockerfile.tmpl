@@ -36,6 +36,7 @@ RUN apt-get update \
 ENV GOPATH=/go
 ENV PATH=${GOPATH}/bin:/usr/local/go/bin:${PATH}
 ENV SRCPATH=${GOPATH}/src
+ENV GOPRIVATE github.com/mberwanger
 
 RUN mkdir -p ${SRCPATH} && chown -R docker:docker ${GOPATH}
 

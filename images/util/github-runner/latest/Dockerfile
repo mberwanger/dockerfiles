@@ -63,28 +63,43 @@ ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 
 USER root
 
-RUN apt-get update \
+RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor > /usr/share/keyrings/cloud.google.gpg \
+ && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list \
+ && apt-get update \
  && apt-get install -y --no-install-recommends \
         build-essential \
         git \
         git-lfs \
+        google-cloud-cli \
         jq \
         libicu74 \
         lsb-release \
         nodejs \
         npm \
         python3 \
+        python3-dev \
         python3-pip \
         python3-setuptools \
         python3-venv \
         python3-wheel \
+        ruby-full \
         software-properties-common \
         sudo \
         unzip \
         wget \
         yq \
         zip \
+ && chmod -R 777 /opt \
+ && chmod -R 777 /usr/share \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+
+RUN KUBECTL_MINOR_VERSION=$(curl -fsSL --retry 5 --retry-delay 10 "https://dl.k8s.io/release/stable.txt" | cut -d'.' -f1,2) \
+ && curl -fsSL --retry 5 --retry-delay 10 "https://pkgs.k8s.io/core:/stable:/${KUBECTL_MINOR_VERSION}/deb/Release.key" | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg \
+ && echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${KUBECTL_MINOR_VERSION}/deb/ /" > /etc/apt/sources.list.d/kubernetes.list \
+ && apt-get update \
+ && apt-get install -y kubectl \
+ && curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash \
+ && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --disabled-password --gecos "" --uid 1001 runner \
  && usermod -aG sudo runner \

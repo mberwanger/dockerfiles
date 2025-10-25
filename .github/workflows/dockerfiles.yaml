@@ -11,15 +11,18 @@ on:
   push:
     branches: [ master ]
   schedule:
-    # Run daily at 1 PM UTC (9 AM EDT / 8 AM EST)
-    - cron: '0 13 * * *'
+    # Run daily at 12 PM UTC (8 AM EDT / 7 AM EST)
+    - cron: '0 12 * * *'
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
 
 permissions:
+  checks: read
+  statuses: read
   contents: read
+  id-token: write
   packages: write
 
 jobs:
@@ -28,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for CI workflow
-        uses: lewagon/wait-on-check-action@v1.4.1
+        uses: lewagon/wait-on-check-action@3603e826ee561ea102b58accb5ea55a1a7482343 # v1.4.1
         with:
           ref: ${{ github.event.pull_request.head.sha || github.sha }}
           check-name: 'Verify Generated Files'
@@ -41,7 +44,7 @@ jobs:
     needs: [wait-for-ci]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build tini:v0.19.0
         uses: ./.github/actions/dockerfile
@@ -53,7 +56,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   core-bionic:
     name: "Build core:bionic"
@@ -61,7 +64,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build core:bionic
         uses: ./.github/actions/dockerfile
@@ -73,7 +76,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   core-focal:
     name: "Build core:focal"
@@ -81,7 +84,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build core:focal
         uses: ./.github/actions/dockerfile
@@ -93,7 +96,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   core-jammy:
     name: "Build core:jammy"
@@ -101,7 +104,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build core:jammy
         uses: ./.github/actions/dockerfile
@@ -113,7 +116,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   core-noble:
     name: "Build core:noble"
@@ -121,7 +124,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build core:noble
         uses: ./.github/actions/dockerfile
@@ -133,7 +136,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   corretto-21:
     name: "Build corretto:21"
@@ -141,7 +144,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build corretto:21
         uses: ./.github/actions/dockerfile
@@ -153,7 +156,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   corretto-22:
     name: "Build corretto:22"
@@ -161,7 +164,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build corretto:22
         uses: ./.github/actions/dockerfile
@@ -173,7 +176,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   corretto-24:
     name: "Build corretto:24"
@@ -181,7 +184,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build corretto:24
         uses: ./.github/actions/dockerfile
@@ -193,7 +196,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   github-runner-latest:
     name: "Build github-runner:latest"
@@ -201,7 +204,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build github-runner:latest
         uses: ./.github/actions/dockerfile
@@ -213,7 +216,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   golang-1-25:
     name: "Build golang:1.25"
@@ -221,7 +224,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build golang:1.25
         uses: ./.github/actions/dockerfile
@@ -233,7 +236,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   python-3-11:
     name: "Build python:3.11"
@@ -241,7 +244,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build python:3.11
         uses: ./.github/actions/dockerfile
@@ -253,7 +256,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   python-3-12:
     name: "Build python:3.12"
@@ -261,7 +264,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build python:3.12
         uses: ./.github/actions/dockerfile
@@ -273,7 +276,7 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   python-3-13:
     name: "Build python:3.13"
@@ -281,7 +284,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build python:3.13
         uses: ./.github/actions/dockerfile
@@ -293,7 +296,47 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
+
+  temurin-21:
+    name: "Build temurin:21"
+    runs-on: ubuntu-latest
+    needs: [wait-for-ci, core-noble]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build temurin:21
+        uses: ./.github/actions/dockerfile
+        with:
+          dockerfile_path: images/lang/temurin/21/Dockerfile
+          image_name: temurin
+          image_tag: 21
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
+
+  temurin-25:
+    name: "Build temurin:25"
+    runs-on: ubuntu-latest
+    needs: [wait-for-ci, core-noble]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build temurin:25
+        uses: ./.github/actions/dockerfile
+        with:
+          dockerfile_path: images/lang/temurin/25/Dockerfile
+          image_name: temurin
+          image_tag: 25
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   yq-4-47:
     name: "Build yq:4.47"
@@ -301,7 +344,7 @@ jobs:
     needs: [wait-for-ci]
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build yq:4.47
         uses: ./.github/actions/dockerfile
@@ -313,11 +356,11 @@ jobs:
           registry_username: ${{ github.actor }}
           registry_password: ${{ secrets.GITHUB_TOKEN }}
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
-          push: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   notify:
-    needs: [tini-v0-19-0, core-bionic, core-focal, core-jammy, core-noble, corretto-21, corretto-22, corretto-24, github-runner-latest, golang-1-25, python-3-11, python-3-12, python-3-13, yq-4-47]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    needs: [tini-v0-19-0, core-bionic, core-focal, core-jammy, core-noble, corretto-21, corretto-22, corretto-24, github-runner-latest, golang-1-25, python-3-11, python-3-12, python-3-13, temurin-21, temurin-25, yq-4-47]
+    if: always() && (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Notify on success

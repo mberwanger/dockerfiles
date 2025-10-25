@@ -5,17 +5,23 @@ Docker base images built from templates using a Go-based generation system.
 ## Quick Start
 
 ```bash
-# Generate all Dockerfiles from templates
-go run ./tool generate image --all
+# Generate all Dockerfiles and workflow (default)
+make
+
+# Generate all Dockerfiles
+make generate-all
 
 # Generate specific image
-go run ./tool generate image core
+make generate IMAGE=core
 
 # Generate GitHub Actions workflow
-go run ./tool generate workflow -o .github/workflows/dockerfiles.yaml
+make generate-workflow
+
+# Run tests
+make test
 
 # Clean generated files
-go run ./tool clean
+make clean
 ```
 
 ## Directory Structure
@@ -36,21 +42,30 @@ tool/                      # Go build system
 
 ## Development Workflow
 
-1. **Edit templates**: Modify source files in `images/{category}/{image}/source/`
+1. **Edit configuration or templates**:
+   - Update `images/manifest.yaml` to add/modify image versions
+   - Or modify template files in `images/{category}/{image}/source/`
    - Template files use `.tmpl` extension with Go template syntax
    - Non-template files (like certificates) are copied as-is
 
-2. **Generate Dockerfiles**: Run `go run ./tool generate image --all`
+2. **Regenerate files**: Run `make` at the root of the repo
+   - This generates all Dockerfiles from templates
+   - And updates the GitHub Actions workflow
 
-3. **Generate workflow** (optional): Run `go run ./tool generate workflow -o .github/workflows/dockerfiles.yaml`
+3. **Commit changes**: Commit both template/manifest and generated files
+   ```bash
+   git add images/ .github/workflows/
+   git commit -m "Update Python to 3.13"
+   ```
 
-4. **Test locally**: Build and test your changes
+4. **Create PR**: Open a pull request
+   - CI validates that generated files are up to date
+   - Docker images are built and tested (but not pushed)
 
-5. **Commit changes**: Commit both template and generated files
+5. **Merge to main**: Once approved and merged
+   - Images are automatically built and pushed to the registry
 
-6. **Create PR**: CI validates that generated files are up to date
-
-7. **Merge**: Images are built and published automatically
+**Note**: A daily scheduled job (1 PM UTC) automatically rebuilds and pushes all images to keep them up to date with the latest base image updates and security patches.
 
 ## Template System
 
@@ -58,6 +73,7 @@ Templates use Go's `text/template` syntax:
 
 ```dockerfile
 {{generation_message}}
+
 FROM {{from_image .base_image}}
 
 RUN apt-get update && apt-get install -y \
@@ -101,4 +117,5 @@ images:
 ## Requirements
 
 - Go 1.21 or later
+- Make
 - Docker (for building images locally)

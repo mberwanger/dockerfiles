@@ -31,12 +31,12 @@ runs:
   using: 'composite'
   steps:
     - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      uses: docker/setup-buildx-action@e468171a9de216ec08956ac3ada2f0791b6bd435 # v3.11.1
       with:
-        platforms: linux/amd64  # Add ,linux/arm64 to enable ARM builds
+        platforms: linux/amd64
 
     - name: Login to Container Registry
-      uses: docker/login-action@v3
+      uses: docker/login-action@5e57cd118135c172c3672efd75eb46360885c0ef # v3.6.0
       with:
         registry: ${{ inputs.registry }}
         username: ${{ inputs.registry_username }}
@@ -44,7 +44,7 @@ runs:
 
     - name: Generate build metadata
       id: meta
-      uses: docker/metadata-action@v5
+      uses: docker/metadata-action@c1e51972afc2121e065aed6d45c65596fe445f3f # v5.8.0
       with:
         images: ${{ inputs.image_repository }}/${{ inputs.image_name }}
         tags: |
@@ -53,9 +53,8 @@ runs:
           type=raw,value=${{ inputs.image_tag }}-{{sha}}
         labels: |
           org.opencontainers.image.title=${{ inputs.image_name }}:${{ inputs.image_tag }}
-          org.opencontainers.image.description=Biograph ${{ inputs.image_name }} container image
+          org.opencontainers.image.description=${{ inputs.image_name }} container image
           org.opencontainers.image.authors=Martin Berwanger
-          org.opencontainers.image.vendor=Biograph
           org.opencontainers.image.version=${{ inputs.image_tag }}
           org.opencontainers.image.source={{url}}
           org.opencontainers.image.revision={{sha}}
@@ -68,20 +67,16 @@ runs:
       run: echo "dir=$(dirname '${{ inputs.dockerfile_path }}')" >> $GITHUB_OUTPUT
 
     - name: Build and push image
-      uses: docker/build-push-action@v6
+      uses: docker/build-push-action@263435318d21b8e681c14492fe198d362a7d2c83 # v6.18.0
       with:
         context: ${{ steps.dockerfile_dir.outputs.dir }}
-        platforms: linux/amd64  # Add ,linux/arm64 to enable ARM builds
         push: ${{ inputs.push == 'true' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
-        cache-from: type=registry,ref=${{ inputs.image_repository }}/${{ inputs.image_name }}:${{ inputs.image_tag }}
-        cache-to: type=inline
+        cache-from: type=registry,ref=${{ inputs.image_repository }}/${{ inputs.image_name }}:buildcache-${{ inputs.image_tag }}
+        cache-to: type=registry,ref=${{ inputs.image_repository }}/${{ inputs.image_name }}:buildcache-${{ inputs.image_tag }},mode=max
         build-args: |
           IMAGE_REPOSITORY=${{ inputs.image_repository }}
-          BUILD_DATE={{date 'YYYYMMDD'}}
-          BUILD_TIMESTAMP={{isotime}}
-          COMMIT_SHA={{sha}}
 
     - name: Build summary
       shell: bash

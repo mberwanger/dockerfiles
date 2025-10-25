@@ -2,7 +2,7 @@
 
 {{ from_image (index .Values "base_image") }}
 
-ENV YQ_VERSION={{ index .Values "version" }}
+ARG YQ_VERSION={{ index .Values "version" }}
 
 RUN apk update && \
     apk add --no-cache "yq~${YQ_VERSION}"
