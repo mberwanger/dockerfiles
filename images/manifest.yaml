@@ -44,10 +44,10 @@ images:
         name: core:noble
     versions:
       latest:
-        docker_version: 28.4.0
-        buildx_version: 0.29.0
-        runner_version: 2.328.0
-        runner_container_hooks_version: 0.7.0
+        docker_version: "28.4.0"
+        buildx_version: "0.29.0"
+        runner_version: "2.328.0"
+        runner_container_hooks_version: "0.7.0"
 
   golang:
     path: lang/golang
@@ -81,6 +81,15 @@ images:
         python_build_version: 3.13
         pip_version: 25.2
         python_pgp_key_id: A821E680E5FA6305
+
+  temurin:
+    path: lang/temurin
+    defaults:
+      base_image:
+        name: core:noble
+    versions:
+      "21": {}
+      "25": {}
 
   tini:
     path: base/tini

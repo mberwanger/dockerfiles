@@ -11,15 +11,18 @@ on:
   push:
     branches: [ master ]
   schedule:
-    # Run daily at 1 PM UTC (9 AM EDT / 8 AM EST)
-    - cron: '0 13 * * *'
+    # Run daily at 12 PM UTC (8 AM EDT / 7 AM EST)
+    - cron: '0 12 * * *'
   workflow_dispatch:
 
 env:
   REGISTRY: ghcr.io
 
 permissions:
+  checks: read
+  statuses: read
   contents: read
+  id-token: write
   packages: write
 
 jobs:
@@ -28,7 +31,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Wait for CI workflow
-        uses: lewagon/wait-on-check-action@v1.4.1
+        uses: lewagon/wait-on-check-action@3603e826ee561ea102b58accb5ea55a1a7482343 # v1.4.1
         with:
           ref: ${{`{{ github.event.pull_request.head.sha || github.sha }}`}}
           check-name: 'Verify Generated Files'
@@ -45,7 +48,7 @@ jobs:
     {{- end}}
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
 
       - name: Build {{.ImageName}}:{{.Version}}
         uses: ./.github/actions/dockerfile
@@ -57,11 +60,11 @@ jobs:
           registry_username: ${{`{{ github.actor }}`}}
           registry_password: ${{`{{ secrets.GITHUB_TOKEN }}`}}
           image_repository: ${{`{{ env.REGISTRY }}`}}/${{`{{ github.repository_owner }}`}}
-          push: ${{`{{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}`}}
+          push: ${{`{{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}`}}
 {{ end }}
   notify:
     needs: [{{range $i, $job := .Jobs}}{{if $i}}, {{end}}{{$job.ID}}{{end}}]
-    if: always() && github.event_name == 'push' && github.ref == 'refs/heads/master'
+    if: always() && (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:
       - name: Notify on success
