@@ -20,7 +20,7 @@ RUN set -eux; \
             ;; \
         *) echo >&2 "unsupported architecture: ${dpkgArch}"; exit 1 ;; \
     esac; \
-    curl -fsSL --retry 3 "${GOLANG_DOWNLOAD_URL}" -o golang.tar.gz \
+    curl -fsSL --retry 3 --retry-delay 10 "${GOLANG_DOWNLOAD_URL}" -o golang.tar.gz \
  && echo "${GOLANG_DOWNLOAD_SHA256}  golang.tar.gz" | sha256sum -c - \
  && tar -C /usr/local -xzf golang.tar.gz \
  && rm golang.tar.gz \

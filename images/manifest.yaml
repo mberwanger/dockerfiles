@@ -4,6 +4,16 @@ defaults:
   registry: ghcr.io/mberwanger
 
 images:
+  claude:
+    path: util/claude
+    versions:
+      golang:
+        base_image:
+          name: golang:1.25
+      python:
+        base_image:
+          name: python:3.13
+
   core:
     path: base/core
     versions:
@@ -36,6 +46,16 @@ images:
         java_version: 22
       "24":
         java_version: 24
+
+  gemini:
+    path: util/gemini
+    versions:
+      golang:
+        base_image:
+          name: golang:1.25
+      python:
+        base_image:
+          name: python:3.13
 
   github-runner:
     path: util/github-runner
