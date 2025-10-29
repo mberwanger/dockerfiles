@@ -36,23 +36,23 @@ RUN set -ex \
          DOCKER_ARCH=aarch64; \
        fi \
     # Download GitHub Actions runner
-    && curl -fL --retry 3 -o runner.tar.gz \
+    && curl -fsSL --retry 3 --retry-delay 10 -o runner.tar.gz \
          "https://github.com/actions/runner/releases/download/v${RUNNER_VERSION}/actions-runner-${TARGETOS}-${RUNNER_ARCH}-${RUNNER_VERSION}.tar.gz" \
     && tar xzf runner.tar.gz \
     && rm runner.tar.gz \
     # Download runner hooks
-    && curl -fL --retry 3 -o runner-container-hooks.zip \
+    && curl -fsSL --retry 3 --retry-delay 10 -o runner-container-hooks.zip \
          "https://github.com/actions/runner-container-hooks/releases/download/v${RUNNER_CONTAINER_HOOKS_VERSION}/actions-runner-hooks-k8s-${RUNNER_CONTAINER_HOOKS_VERSION}.zip" \
     && unzip -q runner-container-hooks.zip -d ./k8s \
     && rm runner-container-hooks.zip \
     # Download Docker
-    && curl -fL --retry 3 -o docker.tgz \
+    && curl -fsSL --retry 3 --retry-delay 10 -o docker.tgz \
          "https://download.docker.com/${TARGETOS}/static/stable/${DOCKER_ARCH}/docker-${DOCKER_VERSION}.tgz" \
     && tar xzf docker.tgz \
     && rm docker.tgz \
     # Download buildx plugin
     && mkdir -p /usr/local/lib/docker/cli-plugins \
-    && curl -fL --retry 3 -o /usr/local/lib/docker/cli-plugins/docker-buildx \
+    && curl -fsSL --retry 3 --retry-delay 10 -o /usr/local/lib/docker/cli-plugins/docker-buildx \
          "https://github.com/docker/buildx/releases/download/v${BUILDX_VERSION}/buildx-v${BUILDX_VERSION}.linux-${TARGETARCH}" \
     && chmod +x /usr/local/lib/docker/cli-plugins/docker-buildx
 
@@ -63,8 +63,8 @@ ENV ACTIONS_RUNNER_PRINT_LOG_TO_STDOUT=1
 
 USER root
 
-RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor > /usr/share/keyrings/cloud.google.gpg \
- && echo "deb [signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list \
+RUN curl -fsSL --retry 3 --retry-delay 10 https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list \
  && apt-get update \
  && apt-get install -y --no-install-recommends \
         build-essential \
@@ -93,12 +93,12 @@ RUN curl -fsSL https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dea
  && chmod -R 777 /usr/share \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-RUN KUBECTL_MINOR_VERSION=$(curl -fsSL --retry 5 --retry-delay 10 "https://dl.k8s.io/release/stable.txt" | cut -d'.' -f1,2) \
- && curl -fsSL --retry 5 --retry-delay 10 "https://pkgs.k8s.io/core:/stable:/${KUBECTL_MINOR_VERSION}/deb/Release.key" | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg \
- && echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${KUBECTL_MINOR_VERSION}/deb/ /" > /etc/apt/sources.list.d/kubernetes.list \
+RUN KUBECTL_MINOR_VERSION=$(curl -fsSL --retry 3 --retry-delay 10 "https://dl.k8s.io/release/stable.txt" | cut -d'.' -f1,2) \
+ && curl -fsSL --retry 3 --retry-delay 10 "https://pkgs.k8s.io/core:/stable:/${KUBECTL_MINOR_VERSION}/deb/Release.key" | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg \
+ && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/${KUBECTL_MINOR_VERSION}/deb/ /" > /etc/apt/sources.list.d/kubernetes.list \
  && apt-get update \
  && apt-get install -y kubectl \
- && curl -fsSL https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash \
+ && curl -fsSL --retry 3 --retry-delay 10 https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 | bash \
  && rm -rf /var/lib/apt/lists/*
 
 RUN adduser --disabled-password --gecos "" --uid 1001 runner \

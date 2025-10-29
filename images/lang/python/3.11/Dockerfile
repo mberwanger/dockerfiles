@@ -40,8 +40,8 @@ RUN set -eux; \
 
 # Download, verify, and compile Python from source
 RUN set -eux; \
-    curl -fL --retry 3 -o python.tgz "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" \
- && curl -fL --retry 3 -o python.tgz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz.asc" \
+    curl -fsSL --retry 3 --retry-delay 10 -o python.tgz "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz" \
+ && curl -fsSL --retry 3 --retry-delay 10 -o python.tgz.asc "https://www.python.org/ftp/python/${PYTHON_VERSION}/Python-${PYTHON_VERSION}.tgz.asc" \
  && export GNUPGHOME="$(mktemp -d)" \
  && (gpg --batch --keyserver hkps://keys.openpgp.org --keyserver-options timeout=10 --recv-keys "64E628F8D684696D" \
         || gpg --batch --keyserver hkps://keyserver.ubuntu.com --keyserver-options timeout=10 --recv-keys "64E628F8D684696D") \
@@ -81,7 +81,7 @@ RUN set -eux; \
 
 # Install pip manually (since we compiled without ensurepip)
 RUN set -eux; \
-    curl -fL --retry 3 -o get-pip.py https://bootstrap.pypa.io/get-pip.py \
+    curl -fsSL --retry 3 --retry-delay 10 -o get-pip.py https://bootstrap.pypa.io/get-pip.py \
  && python${PYTHON_MAJOR_MINOR_VERSION} get-pip.py --no-cache-dir "pip==${PIP_VERSION}" \
  && rm get-pip.py \
  && cd /usr/local/bin \
@@ -92,14 +92,14 @@ RUN set -eux; \
 
 # Install uv (fast modern package manager)
 RUN set -eux; \
-    curl -LsSf https://astral.sh/uv/install.sh | sh \
+    curl -fsSL --retry 3 --retry-delay 10 https://astral.sh/uv/install.sh | sh \
  && mv /root/.local/bin/uv /usr/local/bin/ \
  && mv /root/.local/bin/uvx /usr/local/bin/ \
  && uv --version
 
 # Install poetry
 RUN set -eux; \
-    curl -sSL https://install.python-poetry.org | python${PYTHON_MAJOR_MINOR_VERSION} - \
+    curl -fsSL --retry 3 --retry-delay 10 https://install.python-poetry.org | python${PYTHON_MAJOR_MINOR_VERSION} - \
  && mv /root/.local/bin/poetry /usr/local/bin/ \
  && chmod 755 /usr/local/bin/poetry \
  && poetry --version \

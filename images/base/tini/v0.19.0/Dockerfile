@@ -16,8 +16,8 @@ RUN apkArch="$(apk --print-arch)"; \
     aarch64) export PLATFORM='-arm64' ;; \
     x86_64) export PLATFORM='' ;; \
   esac; \
-  curl -fL --retry 3 -o /tini https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM} ;\
-  curl -fL --retry 3 -o /tini.asc https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM}.asc
+  curl -fsSL --retry 3 --retry-delay 10 -o /tini https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM} ;\
+  curl -fsSL --retry 3 --retry-delay 10 -o /tini.asc https://github.com/krallin/tini/releases/download/v0.19.0/tini${PLATFORM}.asc
 
 ARG KEYSERVERS="keyserver.ubuntu.com keys.openpgp.org hkps://keyserver.ubuntu.com:443"
 RUN --mount=type=cache,target=/var/cache/apk \

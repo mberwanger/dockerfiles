@@ -16,7 +16,7 @@ ARG JAVA_VERSION=22
 # Install Corretto JDK in single layer with modern GPG handling
 RUN set -eux; \
     mkdir -p /etc/apt/keyrings \
- && curl -fsSL --retry 3 https://apt.corretto.aws/corretto.key | gpg --dearmor > /etc/apt/keyrings/corretto.gpg \
+ && curl -fsSL --retry 3 --retry-delay 10 https://apt.corretto.aws/corretto.key | gpg --dearmor -o /etc/apt/keyrings/corretto.gpg \
  && echo "deb [signed-by=/etc/apt/keyrings/corretto.gpg] https://apt.corretto.aws stable main" > /etc/apt/sources.list.d/corretto.list \
  && apt-get update \
  && apt-get install -y --no-install-recommends \
