@@ -24,7 +24,6 @@ RUN set -eux; \
         vim \
         jq \
         nodejs \
-        npm \
  && npm install -g @anthropic-ai/claude-code \
  && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
