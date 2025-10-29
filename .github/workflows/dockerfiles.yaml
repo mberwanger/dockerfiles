@@ -338,6 +338,46 @@ jobs:
           image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
           push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
+  opencode-golang:
+    name: "Build opencode:golang"
+    runs-on: ubuntu-latest
+    needs: [wait-for-ci, golang-1-25]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build opencode:golang
+        uses: ./.github/actions/dockerfile
+        with:
+          dockerfile_path: images/util/opencode/golang/Dockerfile
+          image_name: opencode
+          image_tag: golang
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
+
+  opencode-python:
+    name: "Build opencode:python"
+    runs-on: ubuntu-latest
+    needs: [wait-for-ci, python-3-13]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+
+      - name: Build opencode:python
+        uses: ./.github/actions/dockerfile
+        with:
+          dockerfile_path: images/util/opencode/python/Dockerfile
+          image_name: opencode
+          image_tag: python
+          registry: ${{ env.REGISTRY }}
+          registry_username: ${{ github.actor }}
+          registry_password: ${{ secrets.GITHUB_TOKEN }}
+          image_repository: ${{ env.REGISTRY }}/${{ github.repository_owner }}
+          push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
+
   python-3-11:
     name: "Build python:3.11"
     runs-on: ubuntu-latest
@@ -439,7 +479,7 @@ jobs:
           push: ${{ (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master' }}
 
   notify:
-    needs: [tini-v0-19-0, core-noble, golang-1-25, claude-golang, python-3-13, claude-python, core-bionic, core-focal, core-jammy, corretto-21, corretto-22, corretto-24, gemini-golang, gemini-python, github-runner-latest, python-3-11, python-3-12, temurin-21, temurin-25, yq-4-47]
+    needs: [tini-v0-19-0, core-noble, golang-1-25, claude-golang, python-3-13, claude-python, core-bionic, core-focal, core-jammy, corretto-21, corretto-22, corretto-24, gemini-golang, gemini-python, github-runner-latest, opencode-golang, opencode-python, python-3-11, python-3-12, temurin-21, temurin-25, yq-4-47]
     if: always() && (github.event_name == 'push' || github.event_name == 'schedule') && github.ref == 'refs/heads/master'
     runs-on: ubuntu-latest
     steps:

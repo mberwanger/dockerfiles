@@ -80,6 +80,16 @@ images:
         package_sha_amd64: 7716a0d940a0f6ae8e1f3b3f4f36299dc53e31b16840dbd171254312c41ca12e
         package_sha_arm64: 65a3e34fb2126f55b34e1edfc709121660e1be2dee6bdf405fc399a63a95a87d
 
+  opencode:
+    path: util/opencode
+    versions:
+      golang:
+        base_image:
+          name: golang:1.25
+      python:
+        base_image:
+          name: python:3.13
+
   python:
     path: lang/python
     defaults:
