@@ -44,7 +44,7 @@ jobs:
     needs: [wait-for-ci]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build tini:v0.19.0
         uses: ./.github/actions/dockerfile
@@ -64,7 +64,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build core:noble
         uses: ./.github/actions/dockerfile
@@ -84,7 +84,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build golang:1.25
         uses: ./.github/actions/dockerfile
@@ -104,7 +104,7 @@ jobs:
     needs: [wait-for-ci, golang-1-25]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build claude:golang
         uses: ./.github/actions/dockerfile
@@ -124,7 +124,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build python:3.13
         uses: ./.github/actions/dockerfile
@@ -144,7 +144,7 @@ jobs:
     needs: [wait-for-ci, python-3-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build claude:python
         uses: ./.github/actions/dockerfile
@@ -164,7 +164,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build core:bionic
         uses: ./.github/actions/dockerfile
@@ -184,7 +184,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build core:focal
         uses: ./.github/actions/dockerfile
@@ -204,7 +204,7 @@ jobs:
     needs: [wait-for-ci, tini-v0-19-0]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build core:jammy
         uses: ./.github/actions/dockerfile
@@ -224,7 +224,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build corretto:21
         uses: ./.github/actions/dockerfile
@@ -244,7 +244,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build corretto:22
         uses: ./.github/actions/dockerfile
@@ -264,7 +264,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build corretto:24
         uses: ./.github/actions/dockerfile
@@ -284,7 +284,7 @@ jobs:
     needs: [wait-for-ci, golang-1-25]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build gemini:golang
         uses: ./.github/actions/dockerfile
@@ -304,7 +304,7 @@ jobs:
     needs: [wait-for-ci, python-3-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build gemini:python
         uses: ./.github/actions/dockerfile
@@ -324,7 +324,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build github-runner:latest
         uses: ./.github/actions/dockerfile
@@ -344,7 +344,7 @@ jobs:
     needs: [wait-for-ci, golang-1-25]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build opencode:golang
         uses: ./.github/actions/dockerfile
@@ -364,7 +364,7 @@ jobs:
     needs: [wait-for-ci, python-3-13]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build opencode:python
         uses: ./.github/actions/dockerfile
@@ -384,7 +384,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build python:3.11
         uses: ./.github/actions/dockerfile
@@ -404,7 +404,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build python:3.12
         uses: ./.github/actions/dockerfile
@@ -424,7 +424,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build temurin:21
         uses: ./.github/actions/dockerfile
@@ -444,7 +444,7 @@ jobs:
     needs: [wait-for-ci, core-noble]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build temurin:25
         uses: ./.github/actions/dockerfile
@@ -464,7 +464,7 @@ jobs:
     needs: [wait-for-ci]
     steps:
       - name: Checkout
-        uses: actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8 # v5.0.0
+        uses: actions/checkout@1af3b93b6815bc44a9784bd300feb67ff0d1eeb3 # v6.0.0
 
       - name: Build yq:4.47
         uses: ./.github/actions/dockerfile
