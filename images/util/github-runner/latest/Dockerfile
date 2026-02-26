@@ -11,10 +11,10 @@ FROM ${REGISTRY}/core:noble AS build
 
 ARG TARGETARCH
 ARG TARGETOS
-ARG DOCKER_VERSION=28.4.0
-ARG BUILDX_VERSION=0.29.0
-ARG RUNNER_VERSION=2.328.0
-ARG RUNNER_CONTAINER_HOOKS_VERSION=0.7.0
+ARG DOCKER_VERSION=29.1.3
+ARG BUILDX_VERSION=0.30.1
+ARG RUNNER_VERSION=2.330.0
+ARG RUNNER_CONTAINER_HOOKS_VERSION=0.8.0
 
 USER root
 WORKDIR /actions-runner
@@ -66,6 +66,7 @@ USER root
 RUN curl -fsSL --retry 3 --retry-delay 10 https://packages.cloud.google.com/apt/doc/apt-key.gpg | gpg --dearmor -o /usr/share/keyrings/cloud.google.gpg \
  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/cloud.google.gpg] https://packages.cloud.google.com/apt cloud-sdk main" > /etc/apt/sources.list.d/google-cloud-sdk.list \
  && apt-get update \
+ && apt-get upgrade -y \
  && apt-get install -y --no-install-recommends \
         build-essential \
         git \
@@ -115,6 +116,7 @@ COPY --from=build /usr/local/lib/docker/cli-plugins/docker-buildx /usr/local/lib
 RUN install -o root -g root -m 755 docker/* /usr/bin/ && rm -rf docker
 
 USER runner
+ENV PATH="/home/runner/.local/bin:${PATH}"
 RUN git config --global user.name "GitHub Actions Runner" \
  && git config --global user.email "actions@github.com" \
  && git config --global --add safe.directory '*'

@@ -21,6 +21,14 @@ RUN set -eux; \
         temurin-${JAVA_VERSION}-jdk \
  && rm -rf /tmp/* /var/tmp/*
 
+# Import all custom CA certificates into the Java keystore
+# RUN set -eux; \
+#     for cert in /usr/local/share/ca-certificates/*.crt; do \
+#       [ -f "$cert" ] || continue; \
+#       alias=$(basename "$cert"); \
+#       keytool -importcert -cacerts -storepass changeit -noprompt -file "$cert" -alias "$alias"; \
+#     done
+
 # Set JAVA_HOME and PATH
 RUN ARCH=$(dpkg --print-architecture) && \
     ln -s /usr/lib/jvm/temurin-${JAVA_VERSION}-jdk-${ARCH} /usr/lib/jvm/temurin-${JAVA_VERSION}-jdk

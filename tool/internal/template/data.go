@@ -102,11 +102,11 @@ func (d *Data) fromImage(baseImage interface{}) string {
 		if !ok {
 			return fmt.Sprintf("# ERROR: registry is not a string\nFROM %s", imagePath)
 		}
-		result.WriteString(fmt.Sprintf("ARG REGISTRY=%s\n", registry))
+		_, _ = fmt.Fprintf(&result, "ARG REGISTRY=%s\n", registry)
 
 		d.rootPathIncluded = true
 	}
-	result.WriteString(fmt.Sprintf("FROM %s", imagePath))
+	_, _ = fmt.Fprintf(&result, "FROM %s", imagePath)
 
 	return result.String()
 }
